@@ -38,9 +38,9 @@ def cargar_recetas():
 
             datos = json.load(archivo)
 
-        if isinstance(datos, list):
-    return datos
-return datos.get("recetas", [])
+            if isinstance(datos, list):
+                return datos
+            return datos.get("recetas", [])
 
     except Exception as error:
 
