@@ -2,63 +2,337 @@ import streamlit as st
 import json
 from pathlib import Path
 
+# ---------------------------------------------------------
+# CONFIGURACIÓN
+# ---------------------------------------------------------
+
 st.set_page_config(
     page_title="Agente Gastronómico",
     page_icon="🍳",
-    layout="centered"
+    layout="wide"
 )
 
-st.title("🍳 Agente Gastronómico")
+st.title("🍳 Agente Gastronómico Colombiano")
 st.write(
-    "Tu asistente para consultar recetas, "
-    "ingredientes y procedimientos culinarios."
+    "Consulta recetas, ingredientes, técnicas, procedimientos "
+    "y soluciones a problemas comunes de la cocina colombiana."
 )
+
+# ---------------------------------------------------------
+# CARGAR BASE DE CONOCIMIENTO
+# ---------------------------------------------------------
 
 RUTA_RECETAS = Path(__file__).parent / "recetas.json"
 
+
+@st.cache_data
 def cargar_recetas():
-    if RUTA_RECETAS.exists():
+    if not RUTA_RECETAS.exists():
+        return []
+
+    try:
         with open(RUTA_RECETAS, "r", encoding="utf-8") as archivo:
-            return json.load(archivo)
-    return []
+            datos = json.load(archivo)
+
+        return datos.get("recetas", [])
+
+    except Exception as error:
+        st.error(f"Error al cargar la base de conocimiento: {error}")
+        return []
+
 
 recetas = cargar_recetas()
 
-pregunta = st.text_input(
-    "¿Qué receta o técnica culinaria quieres consultar?",
-    placeholder="Ejemplo: ¿Cómo preparo arroz con pollo?"
+# ---------------------------------------------------------
+# INFORMACIÓN DE LA BASE
+# ---------------------------------------------------------
+
+st.sidebar.header("📚 Base de conocimiento")
+
+st.sidebar.metric(
+    "Recetas disponibles",
+    len(recetas)
 )
 
+if recetas:
+    regiones = sorted(
+        set(
+            receta.get("region")
+            for receta in recetas
+            if receta.get("region")
+        )
+    )
+
+    st.sidebar.write("**Regiones:**")
+    for region in regiones:
+        st.sidebar.write(f"- {region}")
+
+# ---------------------------------------------------------
+# BUSCADOR
+# ---------------------------------------------------------
+
+st.subheader("🔎 Buscar en la base gastronómica")
+
+pregunta = st.text_input(
+    "¿Qué quieres consultar?",
+    placeholder=(
+        "Ejemplo: arroz, arepa, queso, "
+        "plato de la Costa Caribe..."
+    )
+)
+
+# ---------------------------------------------------------
+# BÚSQUEDA
+# ---------------------------------------------------------
+
 if pregunta:
-    resultados = [
-        receta for receta in recetas
-        if pregunta.lower() in json.dumps(
-            receta, ensure_ascii=False
+
+    texto_busqueda = pregunta.lower().strip()
+
+    resultados = []
+
+    for receta in recetas:
+
+        texto_receta = json.dumps(
+            receta,
+            ensure_ascii=False
         ).lower()
-    ]
+
+        if texto_busqueda in texto_receta:
+            resultados.append(receta)
+
+    # -----------------------------------------------------
+    # RESULTADOS
+    # -----------------------------------------------------
 
     if resultados:
-        for receta in resultados:
-            st.subheader(receta["nombre"])
-            st.write("**Ingredientes:**")
-            for ingrediente in receta["ingredientes"]:
-                st.write(f"- {ingrediente}")
 
-            st.write("**Preparación:**")
-            for paso in receta["preparacion"]:
-                st.write(f"- {paso}")
-    else:
-        st.info(
-            "No encontré una coincidencia exacta en la "
-            "base de recetas. Prueba con el nombre del plato "
-            "o un ingrediente."
+        st.success(
+            f"Encontré {len(resultados)} resultado(s)."
         )
 
-with st.expander("Ver recetas disponibles"):
-    for receta in recetas:
-        st.write(f"- {receta['nombre']}")
+        for receta in resultados:
+
+            st.divider()
+
+            st.header(
+                f"🍽️ {receta.get('plato', 'Sin nombre')}"
+            )
+
+            # Información general
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.write(
+                    f"**Región:** "
+                    f"{receta.get('region', 'No registrada')}"
+                )
+
+            with col2:
+                st.write(
+                    f"**Categoría:** "
+                    f"{receta.get('categoria', 'No registrada')}"
+                )
+
+            with col3:
+                st.write(
+                    f"**Porciones:** "
+                    f"{receta.get('porciones', 'No registradas')}"
+                )
+
+            if receta.get("descripcion"):
+                st.write(
+                    f"**Descripción:** "
+                    f"{receta['descripcion']}"
+                )
+
+            # -------------------------------------------------
+            # INGREDIENTES
+            # -------------------------------------------------
+
+            st.subheader("🥕 Ingredientes")
+
+            for ingrediente in receta.get(
+                "ingredientes", []
+            ):
+
+                nombre = ingrediente.get(
+                    "ingrediente", ""
+                )
+
+                cantidad = ingrediente.get(
+                    "cantidad", ""
+                )
+
+                unidad = ingrediente.get(
+                    "unidad", ""
+                )
+
+                observacion = ingrediente.get(
+                    "observacion", ""
+                )
+
+                texto = (
+                    f"- **{nombre}**: "
+                    f"{cantidad} {unidad}"
+                )
+
+                if observacion:
+                    texto += f" — {observacion}"
+
+                st.markdown(texto)
+
+            # -------------------------------------------------
+            # PREPARACIÓN
+            # -------------------------------------------------
+
+            st.subheader("👨‍🍳 Preparación")
+
+            pasos = receta.get(
+                "preparacion", []
+            )
+
+            for paso in pasos:
+
+                numero = paso.get(
+                    "paso", ""
+                )
+
+                instruccion = paso.get(
+                    "instruccion", ""
+                )
+
+                st.markdown(
+                    f"**Paso {numero}:** {instruccion}"
+                )
+
+            # -------------------------------------------------
+            # TÉCNICAS
+            # -------------------------------------------------
+
+            tecnicas = receta.get(
+                "tecnicas", []
+            )
+
+            if tecnicas:
+
+                st.subheader("🔪 Técnicas culinarias")
+
+                for tecnica in tecnicas:
+
+                    nombre = tecnica.get(
+                        "tecnica", ""
+                    )
+
+                    descripcion = tecnica.get(
+                        "descripcion", ""
+                    )
+
+                    st.markdown(
+                        f"**{nombre}:** {descripcion}"
+                    )
+
+            # -------------------------------------------------
+            # ERRORES Y SOLUCIONES
+            # -------------------------------------------------
+
+            errores = receta.get(
+                "errores_y_soluciones", []
+            )
+
+            if errores:
+
+                st.subheader(
+                    "⚠️ Problemas y soluciones"
+                )
+
+                for error in errores:
+
+                    problema = error.get(
+                        "problema", ""
+                    )
+
+                    causa = error.get(
+                        "posible_causa", ""
+                    )
+
+                    solucion = error.get(
+                        "solucion", ""
+                    )
+
+                    st.markdown(
+                        f"**Problema:** {problema}"
+                    )
+
+                    st.markdown(
+                        f"**Posible causa:** {causa}"
+                    )
+
+                    st.markdown(
+                        f"**Solución:** {solucion}"
+                    )
+
+            # -------------------------------------------------
+            # FUENTES
+            # -------------------------------------------------
+
+            fuentes = receta.get(
+                "fuentes", []
+            )
+
+            if fuentes:
+
+                with st.expander("📚 Fuente de información"):
+
+                    for fuente in fuentes:
+
+                        st.write(
+                            f"**Fuente:** "
+                            f"{fuente.get('fuente', '')}"
+                        )
+
+                        st.write(
+                            f"**Tipo:** "
+                            f"{fuente.get('tipo', '')}"
+                        )
+
+    else:
+
+        st.warning(
+            "No encontré una coincidencia. "
+            "Prueba con el nombre de un plato, "
+            "un ingrediente o una región."
+        )
+
+# ---------------------------------------------------------
+# MOSTRAR TODAS LAS RECETAS
+# ---------------------------------------------------------
+
+with st.expander(
+    "📖 Ver las recetas disponibles"
+):
+
+    if recetas:
+
+        for receta in recetas:
+
+            st.write(
+                f"• {receta.get('id', '')} — "
+                f"{receta.get('plato', 'Sin nombre')}"
+            )
+
+    else:
+
+        st.write(
+            "No hay recetas cargadas."
+        )
+
+# ---------------------------------------------------------
+# PIE DE PÁGINA
+# ---------------------------------------------------------
 
 st.caption(
-    "Versión inicial de prueba. "
-    "Las respuestas provienen de las recetas registradas."
+    "Agente Gastronómico Colombiano — "
+    "Base de conocimiento inicial de 100 recetas."
 )
