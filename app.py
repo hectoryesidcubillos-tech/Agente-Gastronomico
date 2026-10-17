@@ -2,10 +2,6 @@ import streamlit as st
 import json
 from pathlib import Path
 
-# ---------------------------------------------------------
-# CONFIGURACIÓN
-# ---------------------------------------------------------
-
 st.set_page_config(
     page_title="Agente Gastronómico",
     page_icon="🍳",
@@ -13,6 +9,7 @@ st.set_page_config(
 )
 
 st.title("🍳 Agente Gastronómico Colombiano")
+
 st.write(
     "Consulta recetas, ingredientes, técnicas, procedimientos "
     "y soluciones a problemas comunes de la cocina colombiana."
@@ -27,21 +24,33 @@ RUTA_RECETAS = Path(__file__).parent / "recetas.json"
 
 @st.cache_data
 def cargar_recetas():
+
     if not RUTA_RECETAS.exists():
         return []
 
     try:
-        with open(RUTA_RECETAS, "r", encoding="utf-8") as archivo:
+
+        with open(
+            RUTA_RECETAS,
+            "r",
+            encoding="utf-8"
+        ) as archivo:
+
             datos = json.load(archivo)
 
         return datos.get("recetas", [])
 
     except Exception as error:
-        st.error(f"Error al cargar la base de conocimiento: {error}")
+
+        st.error(
+            f"Error al cargar la base de conocimiento: {error}"
+        )
+
         return []
 
 
 recetas = cargar_recetas()
+
 
 # ---------------------------------------------------------
 # INFORMACIÓN DE LA BASE
@@ -54,18 +63,6 @@ st.sidebar.metric(
     len(recetas)
 )
 
-if recetas:
-    regiones = sorted(
-        set(
-            receta.get("region")
-            for receta in recetas
-            if receta.get("region")
-        )
-    )
-
-    st.sidebar.write("**Regiones:**")
-    for region in regiones:
-        st.sidebar.write(f"- {region}")
 
 # ---------------------------------------------------------
 # BUSCADOR
@@ -76,10 +73,11 @@ st.subheader("🔎 Buscar en la base gastronómica")
 pregunta = st.text_input(
     "¿Qué quieres consultar?",
     placeholder=(
-        "Ejemplo: arroz, arepa, queso, "
-        "plato de la Costa Caribe..."
+        "Ejemplo: arroz, arepa, ajiaco, "
+        "pollo, Costa Caribe..."
     )
 )
+
 
 # ---------------------------------------------------------
 # BÚSQUEDA
@@ -99,10 +97,12 @@ if pregunta:
         ).lower()
 
         if texto_busqueda in texto_receta:
+
             resultados.append(receta)
 
+
     # -----------------------------------------------------
-    # RESULTADOS
+    # MOSTRAR RESULTADOS
     # -----------------------------------------------------
 
     if resultados:
@@ -119,33 +119,42 @@ if pregunta:
                 f"🍽️ {receta.get('plato', 'Sin nombre')}"
             )
 
+
             # Información general
 
             col1, col2, col3 = st.columns(3)
 
             with col1:
+
                 st.write(
                     f"**Región:** "
                     f"{receta.get('region', 'No registrada')}"
                 )
 
             with col2:
+
                 st.write(
                     f"**Categoría:** "
                     f"{receta.get('categoria', 'No registrada')}"
                 )
 
             with col3:
+
                 st.write(
                     f"**Porciones:** "
                     f"{receta.get('porciones', 'No registradas')}"
                 )
 
+
+            # Descripción
+
             if receta.get("descripcion"):
+
                 st.write(
                     f"**Descripción:** "
                     f"{receta['descripcion']}"
                 )
+
 
             # -------------------------------------------------
             # INGREDIENTES
@@ -154,23 +163,28 @@ if pregunta:
             st.subheader("🥕 Ingredientes")
 
             for ingrediente in receta.get(
-                "ingredientes", []
+                "ingredientes",
+                []
             ):
 
                 nombre = ingrediente.get(
-                    "ingrediente", ""
+                    "ingrediente",
+                    ""
                 )
 
                 cantidad = ingrediente.get(
-                    "cantidad", ""
+                    "cantidad",
+                    ""
                 )
 
                 unidad = ingrediente.get(
-                    "unidad", ""
+                    "unidad",
+                    ""
                 )
 
                 observacion = ingrediente.get(
-                    "observacion", ""
+                    "observacion",
+                    ""
                 )
 
                 texto = (
@@ -179,9 +193,13 @@ if pregunta:
                 )
 
                 if observacion:
-                    texto += f" — {observacion}"
+
+                    texto += (
+                        f" — {observacion}"
+                    )
 
                 st.markdown(texto)
+
 
             # -------------------------------------------------
             # PREPARACIÓN
@@ -190,55 +208,68 @@ if pregunta:
             st.subheader("👨‍🍳 Preparación")
 
             pasos = receta.get(
-                "preparacion", []
+                "preparacion",
+                []
             )
 
             for paso in pasos:
 
                 numero = paso.get(
-                    "paso", ""
+                    "paso",
+                    ""
                 )
 
                 instruccion = paso.get(
-                    "instruccion", ""
+                    "instruccion",
+                    ""
                 )
 
                 st.markdown(
-                    f"**Paso {numero}:** {instruccion}"
+                    f"**Paso {numero}:** "
+                    f"{instruccion}"
                 )
+
 
             # -------------------------------------------------
             # TÉCNICAS
             # -------------------------------------------------
 
             tecnicas = receta.get(
-                "tecnicas", []
+                "tecnicas",
+                []
             )
 
             if tecnicas:
 
-                st.subheader("🔪 Técnicas culinarias")
+                st.subheader(
+                    "🔪 Técnicas culinarias"
+                )
 
                 for tecnica in tecnicas:
 
                     nombre = tecnica.get(
-                        "tecnica", ""
+                        "tecnica",
+                        ""
                     )
 
                     descripcion = tecnica.get(
-                        "descripcion", ""
+                        "descripcion",
+                        ""
                     )
 
                     st.markdown(
-                        f"**{nombre}:** {descripcion}"
+                        f"**{nombre}:** "
+                        f"{descripcion}"
                     )
+
 
             # -------------------------------------------------
             # ERRORES Y SOLUCIONES
             # -------------------------------------------------
 
             errores = receta.get(
-                "errores_y_soluciones", []
+                "errores_y_soluciones",
+                []
             )
 
             if errores:
@@ -250,15 +281,18 @@ if pregunta:
                 for error in errores:
 
                     problema = error.get(
-                        "problema", ""
+                        "problema",
+                        ""
                     )
 
                     causa = error.get(
-                        "posible_causa", ""
+                        "posible_causa",
+                        ""
                     )
 
                     solucion = error.get(
-                        "solucion", ""
+                        "solucion",
+                        ""
                     )
 
                     st.markdown(
@@ -273,17 +307,21 @@ if pregunta:
                         f"**Solución:** {solucion}"
                     )
 
+
             # -------------------------------------------------
             # FUENTES
             # -------------------------------------------------
 
             fuentes = receta.get(
-                "fuentes", []
+                "fuentes",
+                []
             )
 
             if fuentes:
 
-                with st.expander("📚 Fuente de información"):
+                with st.expander(
+                    "📚 Fuente de información"
+                ):
 
                     for fuente in fuentes:
 
@@ -297,6 +335,7 @@ if pregunta:
                             f"{fuente.get('tipo', '')}"
                         )
 
+
     else:
 
         st.warning(
@@ -305,8 +344,9 @@ if pregunta:
             "un ingrediente o una región."
         )
 
+
 # ---------------------------------------------------------
-# MOSTRAR TODAS LAS RECETAS
+# LISTA DE RECETAS
 # ---------------------------------------------------------
 
 with st.expander(
@@ -327,6 +367,7 @@ with st.expander(
         st.write(
             "No hay recetas cargadas."
         )
+
 
 # ---------------------------------------------------------
 # PIE DE PÁGINA
