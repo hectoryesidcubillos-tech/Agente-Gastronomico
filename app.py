@@ -19,7 +19,7 @@ st.write(
 # CARGAR BASE DE CONOCIMIENTO
 # ---------------------------------------------------------
 
-RUTA_RECETAS = Path(__file__).parent / "recetas_platos.json"
+RUTA_RECETAS = Path(__file__).parent / "recetas_completas.json"
 
 
 @st.cache_data
